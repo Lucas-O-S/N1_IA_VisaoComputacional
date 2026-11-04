@@ -1,144 +1,155 @@
 # N1_IA_VisaoComputacional
-# Detecção de malária em células com uma CNN
+# Detecção de malária com CNN: 5 classes × 2 classes
 
-Trabalho de **Redes Neurais Convolucionais**, Engenharia de Computação (FESA).
-Grupo:  Adriana Kaori Kakazu
-        Beatriz Buglio dos Santos
-        Lucas Oliveira Silva
-        Vitoria Kaori Kuriyama
+Trabalho de **Inteligência Artificial** (EC E-954), Engenharia de Computação, FESA, turma EC09, Prof. Marcones Cleber.
+Grupo: _(nomes e RA)_
 
-Uma rede neural convolucional (CNN), construída camada por camada em **Keras**, classifica a imagem de uma hemácia como **Parasitized** (infectada pelo *Plasmodium*) ou **Uninfected** (não infectada).
-
----
-
-## Contexto: malária
-
-A malária é causada pelo protozoário *Plasmodium* e transmitida pela fêmea do mosquito *Anopheles*. Dentro da hemácia o parasita passa pelas fases de **anel** (trofozoíto jovem), **trofozoíto maduro** e **esquizonte**, até a hemácia romper e liberar novos merozoítos. Alguns parasitas viram **gametócitos**.
-
-As lâminas deste conjunto são de ***P. falciparum***. Nessa espécie, as hemácias com formas maduras ficam presas nos capilares, então no sangue periférico aparecem principalmente os **anéis**, muitas vezes colados na borda da célula (forma *accolé*). Na coloração de Giemsa, a cromatina do parasita fica roxo-avermelhada sobre a hemácia rosa. Por isso as imagens são usadas em cores (RGB).
+Uma rede neural convolucional (CNN), construída camada por camada em **Keras**, classifica imagens de hemácias da **versão revisada** do conjunto de malária do NIH (IEEE DataPort). O trabalho tem três partes:
+- **Parte A:** as 5 classes da versão revisada.
+- **Parte B:** só *Parasitized* × *Uninfected*.
+- **Parte C:** comparação entre as duas.
 
 ---
 
-## Conjunto de dados
+## Arquivos
 
-- **Fonte:** [Cell Images for Detecting Malaria – Kaggle](https://www.kaggle.com/datasets/iarunava/cell-images-for-detecting-malaria) (originalmente do NIH/NLM)
-- **Origem:** lâminas de esfregaço fino coradas com Giemsa, de 150 pacientes com *P. falciparum* e 50 pessoas saudáveis, coletadas em Bangladesh e fotografadas com um celular acoplado ao microscópio
-- **Tamanho:** 27.558 imagens de células isoladas, 13.779 por classe
+| Arquivo | Descrição |
+|---|---|
+| `CNN_Malaria_IEEE_5x2.ipynb` | Notebook principal, comentado, para rodar no Google Colab |
+| `CNN_Malaria_IEEE_5x2_executado.ipynb` | O mesmo notebook com as saídas de uma execução completa (CPU), só para consulta |
+| `Apresentacao_CNN_Malaria_IEEE.pptx` | Apresentação de ~10 min, com roteiro de fala nas anotações dos slides |
+| `resultados_malaria_ieee.zip` | Figuras e tabelas geradas pelo notebook (`figs/`) |
+
+---
+
+## Contexto
+
+A malária é causada pelo *Plasmodium* e transmitida pelo mosquito *Anopheles*. As lâminas deste conjunto são de ***P. falciparum***. No sangue periférico dessa espécie aparecem principalmente **anéis** (trofozoítos jovens), muitas vezes colados na borda da hemácia, porque as formas maduras ficam presas nos capilares. Na coloração de Giemsa, o parasita aparece roxo sobre a hemácia rosa.
+
+## Dados
+
+- **Fonte:** [Malaria dataset (thin blood smear, updated) – IEEE DataPort](https://ieee-dataport.org/open-access/malaria-dataset-thin-blood-smear-updated), arquivo `malaria_thin_smear.zip`. O download exige conta IEEE gratuita.
+- **Origem:** lâminas de 150 pacientes com *P. falciparum* e 50 saudáveis (Bangladesh). Esta é a versão revisada e reclassificada do conjunto original do NIH/Kaggle.
+
+| Classe | Imagens | % | Descrição |
+|---|---|---|---|
+| Uninfected | 14.141 | 51,3 | hemácia sem parasita |
+| Parasitized | 12.057 | 43,8 | hemácia com parasita |
+| Bad segmentation | 571 | 2,1 | recorte ruim da célula |
+| Unsure | 570 | 2,1 | o revisor não teve certeza se há parasita |
+| Weird | 218 | 0,8 | aparência atípica |
 
 **Principais achados da análise exploratória**
-- As classes estão perfeitamente balanceadas (50% / 50%).
-- A resolução é variável: mediana de 130×130 px, de 46×40 até 394×385 px. Todas as imagens foram redimensionadas para **64×64**.
-- Não há duplicatas exatas (verificação pelo hash MD5).
-- São **201 lâminas**. As 50 que só têm células *Uninfected* são as dos pacientes saudáveis. Por isso a divisão dos dados é feita **por lâmina**, para evitar vazamento.
+- **Desbalanceamento forte:** a maior classe tem 65 vezes mais imagens que a menor. Por isso usamos o **F1 macro** para escolher os modelos.
+- **Comparação com o conjunto original do Kaggle**, imagem por imagem: a revisão moveu **448 imagens de *Parasitized* para *Uninfected***. As classes novas vieram quase todas de *Parasitized*.
+- **Resolução:** mediana de 130×130 px. Todas as imagens foram redimensionadas para 64×64.
+- **Duplicatas:** nenhuma (verificação pelo hash MD5).
+- **Lâminas:** são 201. As 47 que só têm *Uninfected* são de pacientes saudáveis. Por isso a divisão dos dados é feita **por lâmina**.
 
 ---
 
 ## Como executar
 
-1. Abra `CNN_Malaria_Grupo.ipynb` no [Google Colab](https://colab.research.google.com/).
-2. Escolha **Ambiente de execução → Alterar o tipo de ambiente → GPU T4** (na CPU também funciona, mas leva cerca de 1h20).
-3. Execute **Ambiente de execução → Executar tudo**.
-4. O dataset é baixado automaticamente pelo `kagglehub`. Se o download falhar, o notebook tenta o link do NIH. Também é possível usar uma pasta própria em `DATA_DIR_MANUAL`.
-5. No final, o arquivo `resultados_malaria.zip` com todas as figuras e tabelas é baixado.
+1. Baixe `malaria_thin_smear.zip` no IEEE DataPort e coloque no Google Drive (`MyDrive/malaria_thin_smear.zip`).
+2. Abra `CNN_Malaria_IEEE_5x2.ipynb` no Colab e escolha **GPU T4** (na CPU, a execução leva cerca de 2 horas).
+3. Execute **Ambiente de execução → Executar tudo** e autorize o acesso ao Drive.
+4. No final, o arquivo `resultados_malaria_ieee.zip` é baixado automaticamente.
 
-**Dependências:** já vêm instaladas no Colab: `tensorflow`/`keras`, `scikit-learn`, `pandas`, `numpy`, `matplotlib`, `Pillow`, `tqdm` e `kagglehub`.
-
-**Reprodutibilidade:** a semente é fixa (`SEED = 42`). Na GPU podem aparecer diferenças muito pequenas entre execuções.
+**Reprodutibilidade:** a semente é fixa (`SEED = 42`). Na GPU podem aparecer diferenças pequenas entre execuções.
 
 ---
 
 ## Metodologia
 
-1. **Pré-processamento:** conversão para RGB, redimensionamento para 64×64 e normalização para [0, 1] dentro do modelo (camada `Rescaling`).
-2. **Divisão sem vazamento:** `StratifiedGroupKFold` por lâmina. Nenhuma lâmina aparece em dois conjuntos.
+1. **Pré-processamento:** RGB, 64×64, normalização para [0, 1] dentro do modelo.
+2. **Divisão sem vazamento:** `StratifiedGroupKFold` por lâmina, estratificado pelas 5 classes. A Parte B usa a **mesma divisão**, sem as 3 classes novas.
 
-   | Conjunto | Imagens | % | Lâminas | % Parasitized |
-   |---|---|---|---|---|
-   | Treino | 17.597 | 63,9 | 128 | 50,2 |
-   | Validação | 4.479 | 16,3 | 33 | 49,3 |
-   | Teste | 5.482 | 19,9 | 40 | 50,0 |
+   | Conjunto | Uninf. | Paras. | Bad seg. | Unsure | Weird | Total | Lâminas |
+   |---|---|---|---|---|---|---|---|
+   | Treino | 9.119 | 7.693 | 366 | 360 | 144 | 17.682 | 130 |
+   | Validação | 2.192 | 1.879 | 96 | 94 | 31 | 4.292 | 31 |
+   | Teste | 2.830 | 2.485 | 109 | 116 | 43 | 5.583 | 40 |
 
-3. **CNN baseline** (285.857 parâmetros):
-   `Entrada 64×64×3 → [Conv 3×3 + ReLU + MaxPool 2×2] × 3 (16, 32, 64 filtros) → Flatten → Dense 64 → Dense 1 (sigmoid)`
-   Treinada com o otimizador Adam (lr = 0,001) e perda `binary_crossentropy`, por no máximo 20 épocas.
-4. **Experimentos:** a cada experimento muda **um fator por vez**, partindo da melhor configuração anterior. A mudança é mantida se a acurácia de validação subir.
-5. **Avaliação final:** o conjunto de teste é usado **uma única vez**, só com o modelo escolhido.
-6. **Explicabilidade:** Grad-CAM na última camada convolucional, aplicado a acertos e erros.
-7. **Comparação:** MobileNetV2 pré-treinada e congelada, usada **apenas como referência**.
+3. **CNN baseline:** `[Conv 3×3 + ReLU + MaxPool 2×2] × 3 (16, 32, 64 filtros) → Flatten → Dense 64 → Dense softmax (5 ou 2)`. São 286.117 parâmetros com 5 classes e 285.922 com 2. Treino com Adam (lr = 0,001), no máximo 15 épocas.
+4. **Experimentos:** baseline + 7 experimentos, mudando **um fator por vez** a partir da melhor configuração: data augmentation, dropout, batch normalization, um bloco a mais, taxa de aprendizado, early stopping e pesos de classe. A mudança é mantida se o **F1 macro de validação** subir.
+5. **Avaliação final:** teste usado **uma única vez** em cada parte, com matriz de confusão, métricas por classe e Grad-CAM.
 
 ---
 
 ## Resultados
 
-> Os valores abaixo vêm da execução registrada em `CNN_Malaria_Grupo_executado.ipynb` (CPU). Uma execução no Colab com GPU pode variar levemente. A comparação com a MobileNetV2 não foi executada nessa versão (`RODAR_TRANSFER = False`).
+> Valores da execução registrada em `CNN_Malaria_IEEE_5x2_executado.ipynb` (CPU). Uma execução no Colab com GPU pode variar levemente. A comparação com a MobileNetV2 pré-treinada não foi executada nessa versão.
 
-### Experimentos (validação)
+### Experimentos (F1 macro na validação, %)
 
-| Exp. | Fator alterado | Acc val (%) | Gap treino−val (p.p.) | Resultado |
-|---|---|---|---|---|
-| Baseline | — | 95,09 | 4,77 | referência |
-| E1 | Data augmentation (flip, rotação, zoom) | 96,07 | 0,42 | mantido |
-| E2 | Dropout 0,5 | 95,98 | 0,44 | descartado |
-| E3 | Batch Normalization | 95,65 | 0,70 | descartado |
-| E4 | +1 bloco convolucional (128 filtros) | 96,23 | 0,27 | mantido |
-| E5 | Taxa de aprendizado 1e-3 → 3e-4 | 95,51 | 0,37 | descartado |
-| E6 | Early stopping (paciência 4) | 96,72 | −0,21 | mantido* |
+| Exp. | Fator | Parte A (5 classes) | Parte B (2 classes) |
+|---|---|---|---|
+| Baseline | — | 52,94 | 97,36 |
+| E1 | Data augmentation | 50,97 | **97,83** ✓ |
+| E2 | Dropout 0,5 | 46,43 | 97,80 |
+| E3 | Batch Normalization | 49,71 | 97,31 |
+| E4 | +1 bloco conv (128) | 49,63 | **97,97** ✓ |
+| E5 | lr 1e-3 → 3e-4 | **55,29** ✓ | **98,07** ✓ |
+| E6 | Early stopping | 51,89 | 97,90 |
+| E7 | Pesos de classe | 40,78 | 97,95 |
 
-\* O early stopping não chegou a interromper o treino. O ganho veio de `restore_best_weights`, que restaurou os pesos da melhor época (19).
+✓ = mudança mantida.
+- **Modelo final A:** baseline com lr 3e-4.
+- **Modelo final B:** augmentation + 4º bloco + lr 3e-4 (228.706 parâmetros).
 
-**Modelo final:** baseline + data augmentation + 4º bloco + early stopping, com 228.641 parâmetros.
+### Teste
 
-### Teste (modelo final)
+| | Parte A (5 classes) | Parte B (2 classes) |
+|---|---|---|
+| Acurácia | 91,6% | **97,8%** |
+| F1 macro | 45,7% | 97,8% |
+| Sensibilidade (recall *Parasitized*) | 93,6% | **97,5%** |
 
-| Classe | Precisão | Revocação | F1-score | Acurácia da classe |
-|---|---|---|---|---|
-| Parasitized | 96,21% | 95,33% | 95,77% | 95,33% |
-| Uninfected | 95,37% | 96,24% | 95,81% | 96,24% |
+**F1 por classe na Parte A:** Uninfected 95,2% · Parasitized 92,8% · Bad segmentation 20,7% · Unsure 0,0% · Weird 19,6%.
 
-- **Acurácia geral:** 95,79%
-- **AUC-ROC:** 0,990
-- **Matriz de confusão:** VN = 2.639 · FP = 103 · FN = 128 · VP = 2.612
+**Comparação nas mesmas 5.315 imagens P/U do teste.** As previsões do modelo de 5 classes foram agrupadas em "parasitada" e "não parasitada":
 
-### Análise de erros e Grad-CAM
+| | 5 classes | 2 classes |
+|---|---|---|
+| Acurácia | 96,0% | 97,8% |
+| Sensibilidade | 93,6% | 97,5% |
+| Especificidade | 98,2% | 98,1% |
 
-- Nos acertos, o Grad-CAM se concentra sobre a mancha roxa do parasita, inclusive quando ela está na borda da célula.
-- Vários **falsos positivos** muito confiantes mostram uma mancha roxa visível, e vários **falsos negativos** não mostram parasita. Isso sugere **rótulos errados** no conjunto, o que é coerente com a [revisão publicada do dataset](https://ieee-dataport.org/open-access/malaria-dataset-thin-blood-smear-updated). É uma hipótese.
-- Os erros se concentram em algumas lâminas, com até 24% de erro numa lâmina contra 4,2% no geral.
+### Análise de erros
+- **Unsure e Weird** são previstas quase sempre como *Parasitized*. Essas imagens vieram de *Parasitized* e têm manchas roxas reais.
+- **Pesos de classe (E7)** desestabilizaram o treino: o peso de um erro em *Weird* era cerca de 25, contra 0,4 em *Uninfected*.
+- **Falsos positivos da Parte B:** vários vêm de lâminas de pacientes saudáveis. A mancha roxa fica fora da hemácia, provavelmente uma plaqueta ou resto de corante.
+- **Grad-CAM:** nos acertos de *Parasitized*, a rede foca o anel do parasita.
 
 ---
 
-## Limitações e melhorias
+## Conclusão
+
+- Para triagem, o modelo de **2 classes** é melhor: tem 3,9 pontos percentuais a mais de sensibilidade.
+- O modelo de 5 classes poderia sinalizar imagens duvidosas, mas ainda erra demais nas classes raras.
 
 **Limitações**
-- As células já vêm recortadas, não a lâmina inteira.
+- As classes novas são pequenas e definidas de forma subjetiva.
+- A validação tem poucas imagens raras, então a escolha pelo F1 macro fica ruidosa.
+- As imagens foram reduzidas para 64×64.
 - Há uma única espécie e uma única origem.
-- 50 lâminas só têm células de pacientes saudáveis.
-- Pode haver ruído nos rótulos.
-- As imagens são reduzidas para 64×64, e o limiar de decisão é fixo em 0,5.
-- O Grad-CAM tem baixa resolução (mapa de 4×4).
 
 **Melhorias possíveis**
+- Oversampling ou *focal loss* para as classes raras.
 - Validação cruzada por lâmina.
-- Ajustar o limiar para priorizar a sensibilidade.
-- Normalização de coloração.
-- Imagens de 128×128 com GPU.
+- Ajustar o limiar de decisão para priorizar a sensibilidade.
+- Imagens maiores, com GPU.
 - *Fine-tuning* de modelos pré-treinados.
-- Usar a versão revisada do conjunto.
-
-O modelo deve **apoiar** o microscopista na triagem, não substituí-lo.
 
 ---
 
 ## Uso de IA generativa
 
-O grupo usou o Claude (Anthropic) como apoio. O log com os prompts, as decisões do grupo e as correções críticas está na **seção 11 do notebook**. Todos os números e gráficos vêm da execução real do notebook.
-
----
+O grupo usou o Claude (Anthropic) como apoio. O log de uso, com as correções críticas, está na **seção 11 do notebook**. Todos os números e gráficos vêm da execução real do notebook.
 
 ## Referências
-
-- Rajaraman S. et al. *Pre-trained convolutional neural networks as feature extractors toward improved malaria parasite detection in thin blood smear images.* PeerJ, 6:e4568, 2018.
-- [NIH/NLM – Malaria Screener: repositório de dados](https://lhncbc.nlm.nih.gov/LHC-downloads/mobile-app.html)
+- Rajaraman S. et al. *Pre-trained convolutional neural networks as feature extractors toward improved malaria parasite detection in thin blood smear images.* PeerJ 6:e4568, 2018.
 - [IEEE DataPort – Malaria dataset (thin blood smear, updated)](https://ieee-dataport.org/open-access/malaria-dataset-thin-blood-smear-updated)
-- [CDC – Laboratory diagnosis of malaria: *Plasmodium falciparum*](https://cdc.gov/dpdx/resources/pdf/benchAids/malaria/Pfalciparum_benchaidV2.pdf)
-- Selvaraju R. R. et al. *Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization.* ICCV, 2017.
+- [NIH/NLM – Malaria Screener: repositório de dados](https://lhncbc.nlm.nih.gov/LHC-downloads/mobile-app.html)
+- [CDC – Laboratory diagnosis of malaria: *P. falciparum*](https://cdc.gov/dpdx/resources/pdf/benchAids/malaria/Pfalciparum_benchaidV2.pdf)
+- Selvaraju R. R. et al. *Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization.* ICCV 2017.
